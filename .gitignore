@@ -5,3 +5,4 @@
 *.npy
 *.tar
 *.zip
+*.ipynb_checkpoints
