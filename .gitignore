@@ -1,0 +1,7 @@
+*slurm*
+*.sh
+*/wandb
+*.pt
+*.npy
+*.tar
+*.zip
