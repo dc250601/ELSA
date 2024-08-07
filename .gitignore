@@ -1,9 +1,10 @@
-*slurm*
-*.sh
-*/wandb
-*.pt
 *.npy
-*.tar
-*.zip
-*.ipynb_checkpoints
 *.h5
+**/wandb/
+*.ipynb*
+**/.ipynb_checkpoints/
+*.sh
+*.out
+*.pth
+**__*
+
