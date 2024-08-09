@@ -55,7 +55,7 @@ class LinkImageDataset(Dataset):
 
 def nearest_neighbours_begin(query_feature,no_neighbours,feature_list):
     dist = []
-    for i in range(feature_list.shape[0]):
+    for i in tqdm(range(feature_list.shape[0])):
         dist.append(nn.functional.mse_loss(query_feature[0],
                                            feature_list[i,:])
                    )
@@ -75,7 +75,7 @@ def nearest_neighbours_fast(query_index,forbidden_index,no_neighbours,feature_li
     query_list = torch.tensor(feature_list[query_index],device = device)
     batch_size = batch_size
     iters = int(feature_list.shape[0]/batch_size)+1
-    for i in range(iters):
+    for i in tqdm(range(iters)):
         batch = torch.tensor(feature_list[i*batch_size:(i+1)*batch_size,:],device = device)
         dist_batch = []
         for j in range(len(query_index)):
@@ -174,7 +174,7 @@ def head_train(head,model,steps,positive_list,negative_list, path_list,device):
     optimizer = torch.optim.AdamW(head.parameters(), lr = 0.0005, weight_decay = 0.05)
     criterion = nn.BCEWithLogitsLoss()
     
-    for i in range(steps):
+    for i in tqdm(range(steps)):
         head.train()
         model.eval()
         try:

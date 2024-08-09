@@ -12,4 +12,7 @@ def runner(config = None):
     wandb.init(config = config)
     config = wandb.config
 
-    algo.algo_main(config)
+    if config.mode == "ssald":
+        algo.ssald(config)
+    else:
+        print("Illegal")

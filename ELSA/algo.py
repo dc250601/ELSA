@@ -35,34 +35,33 @@ import vicreg
 from vicreg.main import *
 
 
-def algo_main(config=None):
 
-    wandb.login(key="cb53927c12bd57a0d943d2dedf7881cfcdcc8f09")
+def ssald(config=None):
+
+    # wandb.login(key="cb53927c12bd57a0d943d2dedf7881cfcdcc8f09")
 
     Total_No_epochs = 10 #Fixed but can be played around with
     steps_per_epoch = 100 #Fixed but can be played around with
     device_ = "cuda:0" #Fixed by setting visible device
-    batch_size = 4096 # This depends from system to system
+    batch_size = 4096
 
     Class_id = config.class_id
     No_seeds = config.no_seeds
-
+    
+    
     Run_Name = f"{Class_id}_{No_seeds}"
 
     feature_list, label_list, path_list,embedded_space,component_space, model = util.setup(config.algo)
-
-
+    
     model = model.to(device_)
     model.eval()
-    print()
-
-
 
     class_id = Class_id
     label_list_indx = np.where(label_list == class_id)[0].tolist()
     random.shuffle(label_list_indx)
 
     query_indices = label_list_indx[:No_seeds] 
+
 
     total_samples = len(label_list[label_list == class_id])
 
@@ -79,13 +78,18 @@ def algo_main(config=None):
                                              feature_list=feature_list,
                                              device = device_)
 
-
     b = 50
     no_labellings = a+b
     random_indices = np.array(list(set(np.arange(0,len(feature_list)).tolist()) - set(k_samples)))
     np.random.shuffle(random_indices)
     delta_samples = random_indices[:b].tolist()
 
+    # delta_samples = util.nearest_neighbours_fast(query_index=l_points,
+    #                                              forbidden_index=[],
+    #                                              no_neighbours=b ,
+    #                                              feature_list=feature_list,
+    #                                              device = device_
+    #                                             )
 
     gamma_samples = k_samples + delta_samples
 
@@ -119,75 +123,18 @@ def algo_main(config=None):
     a = config.a
     l = 50
     # alpha = 0.5
-    alpha = 1
+    alpha = config.alpha1
     iterations = Total_No_epochs
 
     nearest_neighbour_list.append(k_samples)
-
+    
     last_lambda = np.array(gamma_samples)[labels] #### This is where the NN is fixed
-
-    NUMBER_GRID = config.ngrid
-    NUMBER_COMP = 3
-    component_space = component_space[:,:NUMBER_COMP]
-    # Normalising the space
-    ##########################################################################################
-    ## Finding the IQR 
-    percentile25 = np.percentile(component_space,25,axis = 0)
-    percentile50 = np.percentile(component_space,50,axis = 0)
-    percentile75 = np.percentile(component_space,75,axis = 0)
-    IQR = percentile75 - percentile25
-
-    thres = 1.5
-    for dim in range(component_space.shape[-1]):
-        component_space[:,dim] = np.clip(component_space[:,dim],
-                                    a_min=(percentile25[dim]-thres*IQR[dim]),
-                                    a_max=(percentile75[dim]+thres*IQR[dim]))
-    ##########################################################################################
-
-
-    space = int(100/NUMBER_GRID)
-    PERCENTILE_ZONE = list(range(0,100+space,space))
-    percentile = np.percentile(component_space,PERCENTILE_ZONE,axis = 0)
-    number_of_borders,number_of_components = percentile.shape
-
-    ##########################################################################################
-    # Grid Calculation
-    ##########################################################################################
-    print("Starting grid calculation")
-    eps = 1e-6
-    grid = []
-
-    if NUMBER_COMP == 3:
-        for border_1 in range(number_of_borders-1):
-            l1 = percentile[border_1,0]
-            if border_1 == 0:
-                l1 = l1 - eps
-            h1 = percentile[border_1+1,0]        
-            idx1 = (component_space[:,0] <= h1)*(component_space[:,0] > l1)
-            for border_2 in range(number_of_borders-1):
-                l2 = percentile[border_2,1]
-                if border_2 == 0:
-                    l2 = l2 - eps
-                h2 = percentile[border_2+1,1]
-                idx2 = (component_space[:,1] <= h2)*(component_space[:,1] > l2)
-                for border_3 in range(number_of_borders-1):
-                    l3 = percentile[border_3,2]
-                    if border_3 == 0:
-                        l3 = l3 - eps
-                    h3 = percentile[border_3+1,2]
-                    idx3 = (component_space[:,2] <= h3)*(component_space[:,2] > l3)
-
-                    idx = idx1*idx2*idx3
-                    idx = list(set(np.where(idx)[0].tolist()) - set(lambda_list))
-                    grid.append(idx)
-    print("Grid calculation completed")
-    ##########################################################################################
 
 
     for epochs in range(iterations):
 
         b = len(lambda_list)
-        k_samples = util.nearest_neighbours_fast(query_index = last_lambda, ### <--------------- NN fixed here 
+        k_samples = util.nearest_neighbours_fast(query_index = last_lambda, ### <--------------- NN fixed here
                                         forbidden_index = lambda_list,
                                         no_neighbours = a,
                                         feature_list = feature_list,
@@ -200,7 +147,7 @@ def algo_main(config=None):
 
         #-----------------------------------------------------------------------------------------------
         iters = int(embedded_space.shape[0]/batch_size)+1
-        for i in range(iters):
+        for i in tqdm(range(iters)):
             feature = torch.tensor(embedded_space[i*batch_size:(i+1)*batch_size,:],
                                    device = device_)
             head.eval()
@@ -208,32 +155,21 @@ def algo_main(config=None):
                 confidence.extend(torch.sigmoid(head(feature)).cpu().numpy()[:,0].tolist())
         #-------------------------------------------------------------------------------------------------
 
-        ##########################################################################################
-        #Delta Calculation
-        ##########################################################################################
-        # This will be done after every epoch
-        grid_stat = []
-        grid_most_confident = []
+        m = np.array(confidence).mean()
+        s = np.array(confidence).std()
+        random_indices =np.array(list(set(np.where(np.array(confidence) > (m+alpha*s))[0]) - set(k_samples)))
+        np.random.shuffle(random_indices)
+        
+        delta_samples = random_indices[0:b].tolist()
 
-        confidence_np = np.array(confidence)
+        # delta_samples = util.nearest_neighbours_fast(query_index=l_points,
+        #                                              forbidden_index=lambda_list,
+        #                                              no_neighbours=b ,
+        #                                              feature_list=feature_list,
+        #                                              device = device_
+        #                                             )
 
-        for i in range(len(grid)):
-            grid[i] = list(set(grid[i]) - set(lambda_list)) # To remove any new discovery from the grid
-            idx = grid[i]
-            grid_confidence = confidence_np[idx]
-            grid_most_confident_ = idx[np.argmax(grid_confidence)]
-            grid_most_confident.append(grid_most_confident_)
-            grid_stat.append(len(idx)) # This wil be used for debugging
-
-        assert np.array(grid_stat).sum()+len(lambda_list) == component_space.shape[0], "Grid contamination error"
-
-        grid_most_confident_score = confidence_np[grid_most_confident]
-        b_ = min(len(grid),b) # Done to prevent out of index errors
-        top_idx = np.argpartition(grid_most_confident_score, -b_)[-b_:] # Chooses the Top b sample
-        delta_samples = (np.array(grid_most_confident)[top_idx]).tolist()
-        ##########################################################################################
-
-        gamma_samples = list(set(k_samples).union(set(delta_samples)))
+        gamma_samples = k_samples + delta_samples
         labelled_list,_ = util.labeller(query_index=gamma_samples,
                       label_list=label_list,
                       label = class_id,
@@ -244,7 +180,6 @@ def algo_main(config=None):
         gamma_negative_list = list(set(gamma_samples) - set(lambda_list))
 
         last_lambda = np.array(gamma_samples)[labels] #### This is where the NN is fixed
-
 
 
         head_train(model = model,
@@ -300,7 +235,7 @@ def algo_main(config=None):
     confidence = []
     #-----------------------------------------------------------------------------------------------
     iters = int(embedded_space.shape[0]/batch_size)+1
-    for i in range(iters):
+    for i in tqdm(range(iters)):
         feature = torch.tensor(embedded_space[i*batch_size:(i+1)*batch_size,:],
                                device = device_)
         head.eval()
@@ -330,4 +265,3 @@ def algo_main(config=None):
                "Final Labelling Efficiency":final_discovery/(no_labellings+len(final))})
     wandb.finish()
     gc.collect()
-

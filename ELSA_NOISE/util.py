@@ -55,7 +55,7 @@ class LinkImageDataset(Dataset):
 
 def nearest_neighbours_begin(query_feature,no_neighbours,feature_list):
     dist = []
-    for i in range(feature_list.shape[0]):
+    for i in tqdm(range(feature_list.shape[0])):
         dist.append(nn.functional.mse_loss(query_feature[0],
                                            feature_list[i,:])
                    )
@@ -75,7 +75,7 @@ def nearest_neighbours_fast(query_index,forbidden_index,no_neighbours,feature_li
     query_list = torch.tensor(feature_list[query_index],device = device)
     batch_size = batch_size
     iters = int(feature_list.shape[0]/batch_size)+1
-    for i in range(iters):
+    for i in tqdm(range(iters)):
         batch = torch.tensor(feature_list[i*batch_size:(i+1)*batch_size,:],device = device)
         dist_batch = []
         for j in range(len(query_index)):
@@ -103,14 +103,33 @@ def nearest_neighbours_fast(query_index,forbidden_index,no_neighbours,feature_li
         i = i+1
     return new_index
 
-def labeller(query_index,label_list,label = "n01534433"):
+def labeller(query_index,label_list,l_p,l_n,label = "n01534433"):
     recieved = len(query_index)
     check = label_list[query_index] == label
     query_index_ = np.where(check)
+    
     index_list = np.array(query_index)[query_index_[0].tolist()].tolist()
-    detected = len(index_list)
-    p = (detected/recieved)*100
-    return index_list, p
+    
+    # The labeller is considered the oracle which is prone to error...
+    # We will have two types of error for the oracle l_p and l_n
+    # l_p is the percentage of positive samples that are mislabelled and dropped
+    
+    ### POSITIVE LABELS ----> index_list
+    ### NEGATIVE LABELS ----> recieved - index_list
+    
+    negative_list = list(set(recieved) - set(index_list))
+    random.shuffle(negative_list)
+    random.shuffle(index_list)
+    
+    NO_POS_SAMPLES = len(index_list)
+    NO_NEG_SAMPLES = len(negative_list)
+    
+    NO_POS_SAMPLES_TO_B_CORRUPTED = int(NO_POS_SAMPLES*l_p) ### This many samples will be dropped ...
+    NO_NEG_SAMPLES_TO_B_CORRUPTED = int(NO_NEG_SAMPLES*l_n) ### This many samples will be added
+    
+    corrupted_list = index_list[:-NO_POS_SAMPLES_TO_B_CORRUPTED] + negative_list[:NO_NEG_SAMPLES_TO_B_CORRUPTED]
+    
+    return corrupted_list, p
 
 def get_forbidden_indices(index):
     forbidden = set([])
@@ -174,7 +193,7 @@ def head_train(head,model,steps,positive_list,negative_list, path_list,device):
     optimizer = torch.optim.AdamW(head.parameters(), lr = 0.0005, weight_decay = 0.05)
     criterion = nn.BCEWithLogitsLoss()
     
-    for i in range(steps):
+    for i in tqdm(range(steps)):
         head.train()
         model.eval()
         try:
