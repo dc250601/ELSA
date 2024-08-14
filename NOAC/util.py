@@ -218,7 +218,7 @@ def setup(algo):
         args = vic_args()
         import vicreg
         from vicreg.main import exclude_bias_and_norm
-        file_feature = h5py.File("../VICReg/space/embedding_list.h5","r")
+        file_feature = h5py.File("../VICReg/space/feature_list.h5","r")
         feature_list = file_feature["data"]
         # feature_list = np.load("../VICReg/space/feature_list.npy")
         label_list = np.load("../VICReg/space/label_list.npy")
@@ -239,7 +239,7 @@ def setup(algo):
     elif algo == "bt":
         args = bt_args()
         import barlow_and_twin
-        file_feature = h5py.File("../BAT/space/embedding_list.h5","r")
+        file_feature = h5py.File("../BAT/space/feature_list.h5","r")
         feature_list = file_feature["data"]
         # feature_list = np.load("../BAT/space/feature_list.npy")
         label_list = np.load("../BAT/space/label_list.npy")

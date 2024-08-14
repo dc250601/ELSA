@@ -107,7 +107,6 @@ def labeller(query_index,label_list,l_p,l_n,label = "n01534433"):
     recieved = len(query_index)
     check = label_list[query_index] == label
     query_index_ = np.where(check)
-    
     index_list = np.array(query_index)[query_index_[0].tolist()].tolist()
     
     # The labeller is considered the oracle which is prone to error...
@@ -115,20 +114,24 @@ def labeller(query_index,label_list,l_p,l_n,label = "n01534433"):
     # l_p is the percentage of positive samples that are mislabelled and dropped
     
     ### POSITIVE LABELS ----> index_list
-    ### NEGATIVE LABELS ----> recieved - index_list
+    ### NEGATIVE LABELS ----> query_index - index_list
     
-    negative_list = list(set(recieved) - set(index_list))
+    negative_list = list(set(query_index) - set(index_list))
+
     random.shuffle(negative_list)
     random.shuffle(index_list)
-    
+          
     NO_POS_SAMPLES = len(index_list)
     NO_NEG_SAMPLES = len(negative_list)
-    
+
+          
     NO_POS_SAMPLES_TO_B_CORRUPTED = int(NO_POS_SAMPLES*l_p) ### This many samples will be dropped ...
     NO_NEG_SAMPLES_TO_B_CORRUPTED = int(NO_NEG_SAMPLES*l_n) ### This many samples will be added
     
-    corrupted_list = index_list[:-NO_POS_SAMPLES_TO_B_CORRUPTED] + negative_list[:NO_NEG_SAMPLES_TO_B_CORRUPTED]
-    
+
+    corrupted_list = index_list[NO_POS_SAMPLES_TO_B_CORRUPTED:] + negative_list[:NO_NEG_SAMPLES_TO_B_CORRUPTED]
+
+    p = 0
     return corrupted_list, p
 
 def get_forbidden_indices(index):
@@ -237,7 +240,7 @@ def setup(algo):
         args = vic_args()
         import vicreg
         from vicreg.main import exclude_bias_and_norm
-        file_feature = h5py.File("../VICReg/space/embedding_list.h5","r")
+        file_feature = h5py.File("../VICReg/space/feature_list.h5","r")
         feature_list = file_feature["data"]
         # feature_list = np.load("../VICReg/space/feature_list.npy")
         label_list = np.load("../VICReg/space/label_list.npy")
@@ -258,7 +261,7 @@ def setup(algo):
     elif algo == "bt":
         args = bt_args()
         import barlow_and_twin
-        file_feature = h5py.File("../BAT/space/embedding_list.h5","r")
+        file_feature = h5py.File("../BAT/space/feature_list.h5","r")
         feature_list = file_feature["data"]
         # feature_list = np.load("../BAT/space/feature_list.npy")
         label_list = np.load("../BAT/space/label_list.npy")
