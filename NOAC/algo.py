@@ -194,43 +194,43 @@ def no_active(config=None):
 
         no_labellings = no_labellings + len(gamma_samples)
 
-        print("-------------------------------------------")
-        print(f"{epochs}th Pass completed")
-        print("No of samples labelled in this step",len(gamma_samples))
-        print("No of samples discovered in this step",
-              len(util.labeller(query_index=k_samples,label_list=label_list,label = class_id)[0])+
-              len(util.labeller(query_index=delta_samples,label_list=label_list,label = class_id)[0]))
-        print("The no of negative samples",len(gamma_negative_list))
-        print("The no of positive samples",len(lambda_list))
-        print("No of k samples",len(k_samples))
-        print("No of positive k samples",len(util.labeller(query_index=k_samples,label_list=label_list,label = class_id)[0]))
-        print("No of delta samples",len(delta_samples))
-        print("No of positive delta samples",len(util.labeller(query_index=delta_samples,label_list=label_list,label = class_id)[0]))
-        print("No of samples labelled till now",no_labellings)
-        print("Total No of samples discovered",len(lambda_list))
-        print("-------------------------------------------")
+#         print("-------------------------------------------")
+#         print(f"{epochs}th Pass completed")
+#         print("No of samples labelled in this step",len(gamma_samples))
+#         print("No of samples discovered in this step",
+#               len(util.labeller(query_index=k_samples,label_list=label_list,label = class_id)[0])+
+#               len(util.labeller(query_index=delta_samples,label_list=label_list,label = class_id)[0]))
+#         print("The no of negative samples",len(gamma_negative_list))
+#         print("The no of positive samples",len(lambda_list))
+#         print("No of k samples",len(k_samples))
+#         print("No of positive k samples",len(util.labeller(query_index=k_samples,label_list=label_list,label = class_id)[0]))
+#         print("No of delta samples",len(delta_samples))
+#         print("No of positive delta samples",len(util.labeller(query_index=delta_samples,label_list=label_list,label = class_id)[0]))
+#         print("No of samples labelled till now",no_labellings)
+#         print("Total No of samples discovered",len(lambda_list))
+#         print("-------------------------------------------")
 
 
-        wandb.log({"Epoch": epochs,
-                  "Samples labelled in the step": len(gamma_samples),
-                  "Samples discovered in this step": len(util.labeller(query_index=k_samples,label_list=label_list,label = class_id)[0])+
-                   len(util.labeller(query_index=delta_samples,label_list=label_list,label = class_id)[0]),
-                  "No of negative samples": len(gamma_negative_list),
-                  "No of positive samples": len(lambda_list),
-                  "No of k samples":len(k_samples),
-                  "No of positive k samples":len(util.labeller(query_index=k_samples,label_list=label_list,label = class_id)[0]),
-                  "No of delta samples":len(delta_samples),
-                  "No of positive delta samples":len(util.labeller(query_index=delta_samples,label_list=label_list,label = class_id)[0]),
-                  "No of samples labelled till now":no_labellings,
-                  "Total No of samples discovered":len(lambda_list),
-                  "Sampling Efficiency":(len(util.labeller(query_index=k_samples,label_list=label_list,label = class_id)[0])+
-                   len(util.labeller(query_index=delta_samples,label_list=label_list,label = class_id)[0]))/(b+l),
-                  "Random Sampling Efficiency":(len(util.labeller(query_index=delta_samples,label_list=label_list,label = class_id)[0])/len(delta_samples)),
-                  "Nearest Neighbour Efficiency":(len(util.labeller(query_index=k_samples,label_list=label_list,label = class_id)[0])/len(k_samples)),
-                  "Cumulative Sampling Efficiency":(len(lambda_list)/no_labellings),
-                  "Discovery":(len(lambda_list)/total_samples)
-                  }
-                 )
+#         wandb.log({"Epoch": epochs,
+#                   "Samples labelled in the step": len(gamma_samples),
+#                   "Samples discovered in this step": len(util.labeller(query_index=k_samples,label_list=label_list,label = class_id)[0])+
+#                    len(util.labeller(query_index=delta_samples,label_list=label_list,label = class_id)[0]),
+#                   "No of negative samples": len(gamma_negative_list),
+#                   "No of positive samples": len(lambda_list),
+#                   "No of k samples":len(k_samples),
+#                   "No of positive k samples":len(util.labeller(query_index=k_samples,label_list=label_list,label = class_id)[0]),
+#                   "No of delta samples":len(delta_samples),
+#                   "No of positive delta samples":len(util.labeller(query_index=delta_samples,label_list=label_list,label = class_id)[0]),
+#                   "No of samples labelled till now":no_labellings,
+#                   "Total No of samples discovered":len(lambda_list),
+#                   "Sampling Efficiency":(len(util.labeller(query_index=k_samples,label_list=label_list,label = class_id)[0])+
+#                    len(util.labeller(query_index=delta_samples,label_list=label_list,label = class_id)[0]))/(b+l),
+#                   "Random Sampling Efficiency":(len(util.labeller(query_index=delta_samples,label_list=label_list,label = class_id)[0])/len(delta_samples)),
+#                   "Nearest Neighbour Efficiency":(len(util.labeller(query_index=k_samples,label_list=label_list,label = class_id)[0])/len(k_samples)),
+#                   "Cumulative Sampling Efficiency":(len(lambda_list)/no_labellings),
+#                   "Discovery":(len(lambda_list)/total_samples)
+#                   }
+#                  )
     
     head_train(model = model,
            head = head,
